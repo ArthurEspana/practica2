@@ -1,178 +1,68 @@
-## Enfoque de la práctica
-Esta práctica debe ser implementada, no solo diseñada.
-El objetivo es aplicar DevSecOps de manera práctica, integrando:
-        - - Front-end
-        - - Back-end
-        - - Inicio de sesión seguro
-        - - Arquitectura de microservicios
-        - - Automatización CI/CD con seguridad embebida
-     
+# Práctica 2: Desarrollo Front-end / Back-end con Integración DevSecOps
 
-# 1. Adición del Front-end
+Este repositorio contiene la implementación y resolución de la **Tarea 2**, cuyo objetivo es diseñar, completar e integrar un **Pipeline CI/CD con enfoque DevSecOps**, priorizando herramientas de automatización, pruebas y seguridad de principio a fin.
 
-[ Front-end ]
-     |
-     | Login / JWT
-     v
-[ users-service ]
-     |
-     | JWT
-     v
-[ api-gateway ]
-     |
-     v
-[ academic-service ]
+Esta tarea simula un escenario real en el que se exige que todo código, estructurado en arquitectura de microservicios e integrado en contenedores, cumpla de forma continua tanto con criterios **funcionales** como con políticas severas de **seguridad**.
 
+## 🛠 Entregables Cumplidos
 
-## Integración DevSecOps (obligatoria)
-El Front-end y el inicio de sesión deben estar cubiertos por el pipeline DevSecOps existente:
-
-- SAST: análisis del código de autenticación y manejo de inputs.
-- SCA: análisis de dependencias relacionadas con seguridad.
-- DAST: pruebas de acceso no autorizado a endpoints protegidos.
-
-**El login no se asume seguro, se valida automáticamente
-
-## Propósito de esta extensión
-Consolidar una visión end-to-end DevSecOps, donde:
- - El diseño,
- - La seguridad,
- - La automatización,
-  Y la experiencia de usuario,
-se integran desde las primeras etapas del desarrollo.
-
-## Pipeline 
-Commit / Pull Request
-   ↓
-Tests automatizados
-   ↓
-SAST (Semgrep)
-   ↓
-Build (Docker)
-   ↓
-SCA (dependencias)
-   ↓
-Deploy automático
-   ↓
-DAST (aplicación en ejecución)
-
-## Docker Compose
-docker-compose down
-docker-compose up --build
-
-## Estructura del Pipeline
-Push / Pull Request
-   ↓
-Install dependencies
-   ↓
-Tests (backend + frontend)
-   ↓
-SAST (Semgrep)
-   ↓
-Build Docker images
-   ↓
-SCA (Trivy)
-   ↓
-docker-compose up
-   ↓
-Smoke tests
-
-## Kubernetes
-kubectl apply -f k8s/users-service/
-kubectl apply -f k8s/academic-service/
-kubectl apply -f k8s/api-gateway/
-
-kubectl get pods
-kubectl get services
-
-# Correr api-gateway
-minikube service api-gateway
-minikube start
-# Trabajar con Docker
-eval $(minikube docker-env -u)
-# Trabajar Docker dentro Kubernetes
-1. minikube start --driver=docker
-   eval $(minikube docker-env)
-2. minikube status
-3. kubectl config current-context
-4. kubectl get nodes
-## Construir las imágenes
-docker build -t frontend:latest ../frontend
-kubectl get pods -n backend
-docker build -t users-service:latest ../backend/users-service
-
-## Desplegar en Kubernetes
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/users-service/
-kubectl apply -f k8s/academic-service/
-kubectl apply -f k8s/api-gateway/
-kubectl apply -f k8s/frontend/
-
-# eliminar cluster
-minikube delete
-
-
-minikube start
-eval $(minikube docker-env)
-
-docker build -t users-service backend/users-service
-docker build -t academic-service backend/academic-service
-docker build -t api-gateway backend/api-gateway
-docker build -t frontend frontend
-
-kubectl apply -f k8s/
-
-# Justificación Técnica del Pipeline DevSecOps
-
-Este documento detalla las decisiones técnicas adoptadas en la implementación del pipeline CI/CD en `.github/workflows/devsecops.yml`, cumpliendo con los lineamientos de DevSecOps descritos en la Práctica 2. Cada etapa del pipeline no solo asegura la funcionalidad del sistema, sino que integra controles de seguridad críticos desde las etapas más tempranas de desarrollo (*Shift Left*).
-
-A continuación se analizan las fases del pipeline y las herramientas implementadas.
+- Pipeline Integrado en `devsecops.yml`.
+- Arquitectura de microservicios original preservada y 100% funcional.
+- Superación de rigurosas fases de Linter, Testing Unitario y Análisis Analítico de Seguridad sin fallos.
+- Documento de Justificación Técnica consolidado.
 
 ---
+
+# 📚 Documento de Justificación Técnica de DevSecOps
+
+El pipeline `.github/workflows/devsecops.yml` fue concebido abarcando todos los vectores recomendados por las mejores prácticas del ciclo de desarrollo seguro. A continuación se desglosa el razonamiento analítico de la implementación de cada herramienta.
 
 ### 1. Instalación Reproducible
-- **Herramienta usada:** `npm ci`
-- **Fase de DevSecOps:** *Build Tooling & Configuration*
-- **Riesgo mitigado:** Inconsistencias entre entornos (*"En mi máquina funciona"*). Prevención de la instalación inyectada accidental de dependencias no referenciadas o versiones incorrectas que podrían romper el sistema.
-- **Necesidad:** Incluso cuando la aplicación ya es funcional localmente en entorno de desarrollo, generar *builds* limpias con dependencias exactas usando el `package-lock.json` garantiza que todos los entornos posteriores (CI, staging y producción) emplearán de forma estricta los mismos artefactos.
+* **Herramienta:** `npm ci`
+* **Fase en DevSecOps:** *Build / Plan*
+* **Riesgo Mitigado:** Modificaciones subrepticias o inconsistencias de versiones transitivas en los entornos ("Phantom Dependencies" o "Funciona en mi máquina").
+* **Justificación de su necesidad:** Aunque el sistema funcione hoy, los paquetes Node cambian a diario. En ausencia de instalaciones `ci` bloqueadas en un `package-lock.json`, un despliegue mañana podría instalar un parche nuevo pero roto o inestable por parte del autor original de un paquete, tirando un sistema en producción aparentemente de la nada.
 
 ### 2. Análisis de Calidad de Código (Linter)
-- **Herramienta usada:** `ESLint`
-- **Fase de DevSecOps:** *Code / Local Analysis*
-- **Riesgo mitigado:** Errores de sintaxis, anti-patrones de diseño y código "sucio" (*Code Smells*). Mitiga además bugs lógicos o fallas potenciales en la semántica del lenguaje.
-- **Necesidad:** El código puede funcionar de manera feliz ("happy path") e ignorar malas prácticas. Mantener un estilo de código estricto reduce la deuda técnica, previniendo fallos futuros o problemas de mantenimiento, siendo vital para un desarrollo a largo plazo.
+* **Herramienta:** `eslint`
+* **Fase en DevSecOps:** *Verify / Create*
+* **Riesgo Mitigado:** Deuda técnica prematura, variables no inicializadas que detonan *memory leaks*, y degradación generalizada de la mantenibilidad del código.
+* **Justificación de su necesidad:** Un código desprolijo "funciona" lógicamente pero acarrea costos de mantenimiento severos a largo plazo. Un Linter homogeniza los patrones del equipo, detecta de forma pasiva redundancias peligrosas de memoria y obliga a estandarizar los estándares del equipo.
 
-### 3. Testing Automático
-- **Herramienta usada:** `Jest` (framework de test de React y Node) y scripts `npm test`.
-- **Fase de DevSecOps:** *Test (Funcional / Unitario)*
-- **Riesgo mitigado:** Errores de lógica y regresiones en código. Evita romper funcionalidades del negocio o alterar el comportamiento esperado luego de refactorizar.
-- **Necesidad:** Aunque el desarrollador pruebe el sistema en su máquina, las pruebas manuales no escalan y omiten fácilmente flujos alternos. Las pruebas automatizadas ofrecen una red de seguridad innegociable (*gate*) que bloqueará el código inestable antes de que alcance usuarios reales.
+### 3. Testing Automático (Pruebas Unitarias/Integrales)
+* **Herramienta:** `jest` (a través de `npm test`)
+* **Fase en DevSecOps:** *Verify*
+* **Riesgo Mitigado:** Bugs de Regresión; roturas de funcionalidades nucleares provocadas por integraciones inadvertidas.
+* **Justificación de su necesidad:** A la hora de añadir refactorizaciones complejas, un desarrollador puede dañar el login que funcionaba la semana pasada; el testing unitario ejerce como escudo contra estos errores garantizando que no lleguen a producción, sustituyendo el engorroso e imperfecto testeo humano manual.
 
-### 4. Seguridad de Dependencias Externas (SCA)
-- **Herramienta usada:** `npm audit --audit-level=critical`
-- **Fase de DevSecOps:** *Code / Build (Software Composition Analysis)*
-- **Riesgo mitigado:** Inclusión de paquetes maliciosos o vulnerabilidades conocidas (CVEs) de terceros. Mitiga ataques a la cadena de suministro (*Supply Chain Attacks*).
-- **Necesidad:** Una aplicación moderna como este esquema de microservicios está compuesta hasta por un 80% de código de terceros (librerías públicas). Si una librería externa posee un CVE crítico, el sistema funcional se vuelve un blanco de ataques incluso cuando nuestro propio código sea inofensivo. Es imperativo detectar de forma automatizada estas debilidades. 
+### 4. Seguridad de Código Estático (SAST)
+* **Herramienta:** `semgrep`
+* **Fase en DevSecOps:** *Verify / Secure* (*Shift-Left Security*)
+* **Riesgo Mitigado:** Inyecciones de código (SQLi, Command Injection), malas manipulaciones de rutas (Path Traversal), o secretos/llaves Hardcodeados en texto plano directamente al control de versiones.
+* **Justificación de su necesidad:** Un registro web puede ser 100% funcional y servir a las necesidades operativas de negocio, pero si está guardando contraseñas cifradas con algoritmos débiles internos, o tiene un error lógico de JWT, el código base expone a toda la compañía.
 
-### 5. Análisis Estático de Seguridad del Código (SAST)
-- **Herramienta usada:** `Semgrep`
-- **Fase de DevSecOps:** *Code / Security Gate (Static Application Security Testing)*
-- **Riesgo mitigado:** Presencia de credenciales hardcodeadas, llamadas a funciones inseguras, vectores de ataques genéricos como (Inyección SQL, XSS). Mitiga falencias OWASP de las primeras etapas.
-- **Necesidad:** Realizar escaneos estáticos en PRs evita que patrones inseguros de código suban a la rama principal. Aunque el sistema operativo y entorno funcionen perfectos a nivel macro, vulnerabilidades como "Inyección SQL" sólo pueden descubrirse leyendo semánticamente el código antes de lanzar.
+### 5. Análisis de Seguridad de Componentes (SCA)
+* **Herramienta:** `npm audit` (configurado bajo `--audit-level=critical`)
+* **Fase en DevSecOps:** *Verify / Secure*
+* **Riesgo Mitigado:** Integración y exposición originada por *Vulnerabilidades y Exposiciones Comunes* (CVEs) en librerías open-source subyacentes proveídas por terceras partes.
+* **Justificación de su necesidad:** El 90% de las aplicaciones modernas no es código escrito por el desarrollador; son paquetes terceros heredados. Aún siendo el código primario estricto, una dependencia desactualizada manipulando el Parser HTTP puede acarrear una crisis por denegación de servicio (ReDOS), que es bloqueada gracias al escaneo continuo SCA.
 
-### 6. Build de Contenedores y Estructura Base
-- **Herramienta usada:** `Docker` / `Docker Compose`
-- **Fase de DevSecOps:** *Release / Deploy*
-- **Riesgo mitigado:** Discrepancias directas de los entornos de ejecución (Sistema Operativo y Configuración de Red Base).
-- **Necesidad:** Permite encapsular el ambiente exacto que necesitan los microservicios sin polucionar los nodos base.
+### 6. Integración y Construcción de Artefactos inmutables
+* **Herramienta:** `docker compose build` & Versionado Semántico por Commit de GitHub (`docker tag`)
+* **Fase en DevSecOps:** *Package / Release*
+* **Riesgo Mitigado:** "Drift" de configuración. Diferencias fatales entre las librerías de SO en Staging y Producción.
+* **Justificación de su necesidad:** Al empaquetar código con una imagen autoconstruida en el ciclo, las librerías binarias quedan congeladas. Asegura que lo que pasa el SAST/SCA en GitHub, se corre byte a byte igual que en Amazon AWS mediante un artefacto estático.
 
-### 7. Seguridad de Contenedores (Scanner de Imágenes)
-- **Herramienta usada:** `Trivy` (Trivy Action)
-- **Fase de DevSecOps:** *Release / Container Security*
-- **Riesgo mitigado:** Despliegue de imágenes base desactualizadas con fallos en paquetes del OS, así como librerías expuestas del entorno y malas configuraciones del `Dockerfile`.
-- **Necesidad:** Como DevOps, se construyen imágenes docker continuamente. La app puede ser 100% segura semánticamente, pero si se despliega sobre una base "Node:20" genérica sin parches y expuesta a CVEs en OS (`curl`, `openssl`), la seguridad final está comprometida. Trivy es nuestro último *gate* previo a la orquestación.
+### 7. Comprobación y Seguridad del Contenedor 
+* **Herramienta:** `aquasecurity/trivy-action`
+* **Fase en DevSecOps:** *Release / Secure*
+* **Riesgo Mitigado:** Fallos o huecos de escalamiento de privilegios o exploits a librerías profundas y anticuadas del sistema operativo del contenedor Docker base (`alpine`, `glibc`, `npm` root tools, etc.), invisibles para Node.js y Semgrep.
+* **Justificación de su necesidad:** Con una arquitectura funcional en Docker, rara vez los programadores actualizan el `FROM node:X` de cada dockerfile si éste "funciona". Trivy es capaz de detener el pipeline si detecta que la imagen final porta backdoors graves dentro del Linux contenido antes de enviarse al orquestador real (Kubernetes).
 
 ---
 
-### Resumen
-Estas herramientas consolidan un pipeline de tipo **fail-fast**: detiene y reporta de inmediato la compilación al encontrar violaciones funcionales o de seguridad, convirtiendo a DevSecOps en un habilitador para lanzamientos más ágiles y robustos, demostrando el ciclo virtuoso de integrar la seguridad "por defecto" (Shift-Left).
+## 🚀 Probar Localmente
+Para probar funcionalmente que los servicios no arrojan errores subyacentes:
+1. `git clone <repo>`
+2. `docker compose -f backend/docker-compose.yml up -d`
+3. Monitoree su local.
